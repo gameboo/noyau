@@ -52,8 +52,8 @@ void commut(int no)
     if(mysetjmp(elu) == 0)
     {
         Tproc_table[elu].state = READY;
-        elu = elected;
         printf("\nelu = %d, elected = %d\n", elu, elected);
+        //elu = elected;
         mylongjmp(elected);
     }
     else
@@ -75,7 +75,10 @@ void new_proc(void (*f)(int), int arg)
             if(mysetjmp(tmp_counter) == 0)
                 return;
             else
+            {
                 f(arg);
+                return; // a reflechir
+            }
         }
     }
     // no entry available

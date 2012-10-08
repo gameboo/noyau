@@ -6,6 +6,7 @@ void f(int nb)
     int i = 0;
     for(i = 0; i < 10000000; i++)
     {
+        //usleep(500);
         if(i%1000 == 0)
             printf("I'm f(%d), step #%d\n", nb, i);
     }
@@ -16,6 +17,7 @@ void g(int nb)
     int i = 0;
     for(i = 0; i < 10000000; i++)
     {
+        //usleep(500);
         if(i%1000 == 0)
             printf("I'm g(%d), step #%d\n", nb, i);
     }

@@ -94,7 +94,7 @@ void new_proc(void (*f)(int), int arg)
         if(Tproc_table[tmp_counter].state == FREE)
         {
             Tproc_table[tmp_counter].state = READY;
-            //TODO restore signals
+            //TODO unmask signals
             if(mysetjmp(tmp_counter) == 0)
                 return;
             else
@@ -103,7 +103,7 @@ void new_proc(void (*f)(int), int arg)
                 commut(0);
             }
         }
-        //TODO restore signals
+        //TODO unmask signals
     }
     // no entry available
     printf("error : couldn't create process, no entry available in Tproc_table\n");

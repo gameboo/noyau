@@ -28,7 +28,8 @@ struct Tproc
 {
     char stack [64536];			// the process'stack
     unsigned int stack_size;	// the process'stack size
-    jmp_buf buf;				// the jmp_buf to save the process'context
+    //jmp_buf buf;				// the jmp_buf to save the process'context
+    sigjmp_buf buf;				// the jmp_buf to save the process'context
     enum proc_state state;      // the process'state
 };
 
@@ -38,14 +39,14 @@ struct Tproc
 
 // NB_PROCESS
 // the maximum number of processes
-#define NB_PROCESS 100
+#define NB_PROCESS 10
 // TIC_SEC
 // the time in seconds between to calls to the commut function
 #define TIC_SEC 1
 // Tproc_table
 // dhis table has NB_PROCESS struct Tproc entries. Each entry can describe a
 // process
-struct Tproc Tproc_table[NB_PROCESS];
+struct Tproc Tproc_table[NB_PROCESS+1];
 // elu
 // designates the elected process
 unsigned int elu;
@@ -66,11 +67,13 @@ char * top_stack;
 // void init_sched();
 // initializes misc stuff for the scheduling to work
 #define init_sched()\
+({\
 int tmp_counter;\
 for (tmp_counter = 0; tmp_counter < NB_PROCESS ; tmp_counter++)\
     Tproc_table[tmp_counter].state = FREE;\
 char dummy;\
-top_stack = &dummy
+top_stack = &dummy;\
+})
 
 // void new_proc(void (*f)(int), int arg);
 // add a function to the scheduler

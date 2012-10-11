@@ -6,34 +6,56 @@
 #include <string.h>
 #include <stdio.h>
 
+void print_Tproc_table()
+{
+    int i;
+    for( i = 0; i < NB_PROCESS; i++)
+    {
+        printf("Tproc_table[%d].state = %d\n", i, Tproc_table[i].state);
+        printf("Tproc_table[%d].buf = %d\n", i, Tproc_table[i].buf);
+        printf("Tproc_table[%d].stack = %d\n", i, Tproc_table[i].stack);
+        printf("Tproc_table[%d].stack_size = %d\n", i,Tproc_table[i].stack_size);
+    }
+}
+
 int mysetjmp(int idx)
 {
+    // dummy variable
     char current_top;
 
-    if(setjmp(Tproc_table[idx].buf) == 0)
+    // first call to mysetjmp ?
+    //if(setjmp(Tproc_table[idx].buf) == 0)
+    if(sigsetjmp(Tproc_table[idx].buf, 42) == 0)
     {
-        // sauvegarde ctx 
+        // save process stack
         Tproc_table[idx].stack_size = (unsigned int) top_stack - (unsigned int) &current_top;
         memcpy(Tproc_table[idx].stack, &current_top, Tproc_table[idx].stack_size);
+        // returning 0
         return 0;
     }
+    // landing from mylongjmp
     else
     {
-        // restaure ctx
+        // restore process stack
         memcpy( &current_top, Tproc_table[elu].stack, Tproc_table[elu].stack_size);
+        // returning 1
         return 1;
     }
 }
 
 void mylongjmp(int idx)
 {
-    // change 
+    // change elected process
     elu = idx;
-    longjmp(Tproc_table[elu].buf, 1);
+    // do the jump
+    //longjmp(Tproc_table[elu].buf, 1);
+    siglongjmp(Tproc_table[elu].buf, 1);
 }
 
 int election()
 {
+    // simple Tproc_table parsing, selecting the next READY Tproc
+    //TODO might turn into an endless loop if no Tproc is in READY state
     int tmp = elu;
     do
     {
@@ -46,20 +68,19 @@ int election()
 
 void commut(int no)
 {
-    printf("\ncommut called with arg no = %d\n", no);
+    printf("######## commut called with arg no = %d ########\n", no);
+    //print_Tproc_table();
     alarm(TIC_SEC);
     int elected = election();
     if(mysetjmp(elu) == 0)
     {
+        printf("######## Tproc %d -> READY state\n", elu);
+        printf("######## Tproc %d -> RUNNING state\n", elected);
+        //TODO mask signals
         Tproc_table[elu].state = READY;
-        printf("\nelu = %d, elected = %d\n", elu, elected);
-        //elu = elected;
+        Tproc_table[elected].state = RUNNING;
+        //TODO restore signals
         mylongjmp(elected);
-    }
-    else
-    {
-        Tproc_table[elu].state = RUNNING;
-        printf("keep running process %d\n", elu);
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -69,19 +90,23 @@ void new_proc(void (*f)(int), int arg)
     int tmp_counter;
     for (tmp_counter = 0; tmp_counter < NB_PROCESS ; tmp_counter++)
     {
+        //TODO mask signals
         if(Tproc_table[tmp_counter].state == FREE)
         {
             Tproc_table[tmp_counter].state = READY;
+            //TODO restore signals
             if(mysetjmp(tmp_counter) == 0)
                 return;
             else
             {
                 f(arg);
-                return; // a reflechir
+                commut(0);
             }
         }
+        //TODO restore signals
     }
     // no entry available
+    printf("error : couldn't create process, no entry available in Tproc_table\n");
     exit(-1);
 }
 

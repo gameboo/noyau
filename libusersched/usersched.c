@@ -69,6 +69,7 @@ int election()
 void commut(int no)
 {
     printf("######## commut called with arg no = %d ########\n", no);
+    print_Tproc_table();
     //print_Tproc_table();
     alarm(TIC_SEC);
     int elected = election();
@@ -100,6 +101,12 @@ void new_proc(void (*f)(int), int arg)
             else
             {
                 f(arg);
+                printf("proc %d over\n", tmp_counter);
+                //TODO mask signals
+                Tproc_table[tmp_counter].state = FREE;
+                //TODO unmask signals
+                printf("explicit call to commut\n");
+                print_Tproc_table();
                 commut(0);
             }
         }
